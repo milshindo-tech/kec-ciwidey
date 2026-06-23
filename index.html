@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Informasi SPPG</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #10b981;
+    --primary-hover: #059669;
+    --primary-light: #ecfdf5;
+    --primary-dark: #064e3b;
+    --primary-glow: rgba(16, 185, 129, 0.15);
+
+    --status-op: #10b981;
+    --status-op-light: #ecfdf5;
+    --status-op-dark: #047857;
+
+    --status-non: #f43f5e;
+    --status-non-light: #fff1f2;
+    --status-non-dark: #be123c;
+
+    --status-pending: #f59e0b;
+    --status-pending-light: #fef3c7;
+    --status-pending-dark: #b45309;
+
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #64748b;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    flex-shrink: 0;
+  }
+  .logo {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: white;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+  }
+  header h1 {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  header .sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .live-badge {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--status-op-dark);
+    background: var(--status-op-light);
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--status-op);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+  }
+
+  /* STAT CARDS */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 1.5rem 2rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--border-hover);
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+  }
+  .stat-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  /* Specific Highlight States */
+  .stat-card.highlight-total::after { background: var(--primary); }
+  
+  .stat-card.highlight-op::after { background: var(--status-op); }
+  .stat-card.highlight-op .value { color: var(--status-op-dark); }
+  
+  .stat-card.highlight-non::after { background: var(--status-non); }
+  .stat-card.highlight-non .value { color: var(--status-non-dark); }
+
+  .stat-card.highlight-desa::after { background: #6366f1; }
+  .stat-card.highlight-desa .value { color: #4338ca; }
+
+  /* LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 390px 1fr;
+    flex: 1;
+    min-height: 0;
+    background: var(--bg);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .filters {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--panel);
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    background: #f8fafc;
+    transition: var(--transition);
+  }
+  .search-box:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+    background: #ffffff;
+  }
+  .search-box input {
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    color: var(--text);
+  }
+  .search-box input::placeholder {
+    color: var(--text-muted);
+  }
+  .search-box svg {
+    color: var(--text-muted);
+    transition: var(--transition);
+  }
+  .search-box:focus-within svg {
+    color: var(--primary);
+  }
+
+  .filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .filter-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .filter-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .filter-row select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    transition: var(--transition);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 32px;
+  }
+  .filter-row select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+    background-color: #ffffff;
+  }
+
+  .list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #f8fafc;
+  }
+
+  /* SPPG CARD */
+  .sppg-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sppg-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .sppg-card.active {
+    border-color: var(--primary);
+    background: var(--panel);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);
+  }
+  .sppg-card.active::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 12px;
+    bottom: 12px;
+    width: 4px;
+    background: var(--primary);
+    border-radius: 0 4px 4px 0;
+  }
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+    word-break: break-word;
+  }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+  }
+  .badge-op {
+    background: var(--status-op-light);
+    color: var(--status-op-dark);
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+  .badge-non {
+    background: var(--status-non-light);
+    color: var(--status-non-dark);
+    border-color: rgba(244, 63, 94, 0.2);
+  }
+  .badge-pending {
+    background: var(--status-pending-light);
+    color: var(--status-pending-dark);
+    border-color: rgba(245, 158, 11, 0.2);
+  }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* MAP */
+  #map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: #f1f5f9;
+  }
+  
+  /* MAP OVERRIDES */
+  .leaflet-popup-content-wrapper {
+    border-radius: var(--radius-lg) !important;
+    padding: 0 !important;
+    box-shadow: var(--shadow-xl) !important;
+    border: 1px solid var(--border) !important;
+    overflow: hidden;
+  }
+  .leaflet-popup-content {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    color: var(--text) !important;
+    margin: 0 !important;
+    width: 252px !important;
+  }
+  .leaflet-popup-tip {
+    box-shadow: 0 3px 14px rgba(0,0,0,0.1) !important;
+  }
+  .leaflet-container a.leaflet-popup-close-button {
+    color: rgba(255,255,255,0.85) !important;
+    padding: 10px !important;
+    font-size: 18px !important;
+    z-index: 2;
+  }
+  .leaflet-container a.leaflet-popup-close-button:hover {
+    color: #fff !important;
+  }
+
+  /* POPUP CARD (info umum saja) */
+  .map-popup-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .map-popup-head {
+    padding: 14px 16px 12px;
+    position: relative;
+  }
+  .map-popup-head.head-op { background: linear-gradient(135deg, var(--status-op) 0%, var(--status-op-dark) 100%); }
+  .map-popup-head.head-non { background: linear-gradient(135deg, var(--status-non) 0%, var(--status-non-dark) 100%); }
+  .map-popup-head.head-pending { background: linear-gradient(135deg, var(--status-pending) 0%, var(--status-pending-dark) 100%); }
+  .map-popup-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background: rgba(255,255,255,0.22);
+    padding: 4px 9px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .map-popup-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fff;
+  }
+  .map-popup-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.3;
+    padding-right: 18px;
+  }
+  .map-popup-body {
+    padding: 12px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .map-popup-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .map-popup-row .icon {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .map-popup-row .info {
+    min-width: 0;
+  }
+  .map-popup-row .info .l {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1px;
+  }
+  .map-popup-row .info .v {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .map-popup-footer {
+    padding: 0 16px 14px;
+  }
+  .map-popup-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--primary-dark);
+    color: #fff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .map-popup-btn:hover {
+    background: #042f24;
+    transform: translateY(-1px);
+  }
+
+  /* FOOTER SUMBER DATA */
+  .footer-bar {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    flex-shrink: 0;
+  }
+  .footer-bar a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+  }
+  .footer-bar a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* FOTO BUTTON on card */
+  .foto-btn {
+    margin-top: 4px;
+    width: 100%;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: var(--transition);
+  }
+  .foto-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary-hover);
+    background: var(--primary-light);
+  }
+
+  /* PHOTO MODAL */
+  .photo-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+  }
+  .photo-modal-overlay.open {
+    display: flex;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .photo-modal {
+    background: var(--panel);
+    border-radius: var(--radius-lg);
+    max-width: 760px;
+    width: 100%;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .modal-header-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .modal-sppg-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+    word-break: break-word;
+  }
+  .modal-sppg-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .modal-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .modal-close {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: var(--transition);
+  }
+  .modal-close:hover {
+    background: #e2e8f0;
+    color: var(--text);
+    transform: rotate(90deg);
+  }
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .modal-section-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 640px) {
+    .photo-grid { grid-template-columns: 1fr; }
+  }
+  .photo-slot {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+  }
+  .photo-slot:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-sm);
+  }
+  .photo-slot-label {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: #ffffff;
+  }
+  .photo-slot-area {
+    height: 140px;
+    overflow: hidden;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .photo-slot-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: var(--transition);
+  }
+  .photo-slot-area img:hover {
+    transform: scale(1.05);
+  }
+  .photo-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 16px;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .photo-placeholder-icon {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+  .photo-slot-actions {
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .btn-upload {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+  }
+  .btn-upload:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+  }
+  .btn-view {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border: 1px solid rgba(16, 185, 129, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-view:hover {
+    background: #d1fae5;
+  }
+  .btn-del {
+    padding: 8px 12px;
+    background: var(--status-non-light);
+    color: var(--status-non-dark);
+    border: 1px solid rgba(244, 63, 94, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-del:hover {
+    background: #ffe4e6;
+  }
+
+  /* LIGHTBOX */
+  .lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+  }
+  .lightbox-overlay.open {
+    display: flex;
+  }
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes scaleUp {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  
+  .lightbox-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+  }
+  .lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+  }
+  .lightbox-caption {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* RESPONSIVE LAYOUT */
+  @media (max-width: 992px) {
+    body {
+      overflow: auto;
+      height: auto;
+    }
+    header {
+      padding: 0 1rem;
+      height: 60px;
+    }
+    .stats {
+      padding: 1rem;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .main {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      height: auto;
+    }
+    .sidebar {
+      height: 600px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    #map {
+      height: 450px;
+      order: -1;
+    }
+    .footer-bar {
+      flex-direction: column;
+      height: auto;
+      gap: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .modal-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .modal-header-right {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  /* DETAIL GRID — informasi lengkap di dalam modal */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  @media (max-width: 560px) {
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+  .detail-item {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .detail-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+  }
+  .detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-word;
+    line-height: 1.4;
+  }
+  /* Baris koordinat & alamat tampil full width */
+  .detail-item.full-width {
+    grid-column: 1 / -1;
+  }
+  /* Section title spacer */
+  .modal-section-title + .detail-grid { margin-top: 0; }
+
+  /* Tombol Google Maps di modal */
+  .btn-maps {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: 0 2px 6px rgba(16,185,129,0.2);
+  }
+  .btn-maps:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 10px rgba(16,185,129,0.3);
+    transform: translateY(-1px);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⊞</div>
+  <div>
+    <h1>SISTEM INFORMASI SPPG</h1>
+    <div class="sub" id="headerSub">Memuat data...</div>
+  </div>
+  <div class="live-badge">
+    <div class="dot"></div>
+    <span>Live Sync Aktif</span>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat-card highlight-total">
+    <div class="label">Total SPPG</div>
+    <div class="value" id="statTotal">—</div>
+  </div>
+  <div class="stat-card highlight-op">
+    <div class="label">Operasional</div>
+    <div class="value" id="statOp">—</div>
+  </div>
+  <div class="stat-card highlight-non">
+    <div class="label">Non Operasional</div>
+    <div class="value" id="statNon">—</div>
+  </div>
+  <div class="stat-card highlight-desa">
+    <div class="label">Total Desa</div>
+    <div class="value" id="statDesa">—</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="filters">
+      <div class="search-box">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Cari nama SPPG, ketua, atau desa...">
+      </div>
+      <div class="filter-row">
+        <div>
+          <div class="filter-label">DESA / KELURAHAN</div>
+          <select id="filterDesa">
+            <option value="">Semua Desa</option>
+          </select>
+        </div>
+        <div>
+          <div class="filter-label">STATUS OPERASIONAL</div>
+          <select id="filterStatus">
+            <option value="">Semua Status</option>
+            <option value="Operasional">Operasional</option>
+            <option value="Non Operasional">Non Operasional</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="list" id="sppgList">
+      <div class="empty">Memuat data SPPG...</div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+</div>
+
+<div class="footer-bar">
+  <span>📊 Peta &amp; Data disinkronkan dari <a href="#" id="sheetsLink">Google Spreadsheets</a></span>
+  <span id="lastUpdate">—</span>
+</div>
+
+<!-- DETAIL PROFIL MODAL -->
+<div class="photo-modal-overlay" id="photoModal">
+  <div class="photo-modal">
+
+    <!-- HEADER MODAL -->
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-sppg-name" id="modalSppgName"></div>
+        <div class="modal-sppg-meta" id="modalSppgMeta"></div>
+      </div>
+      <div class="modal-header-right">
+        <span class="status-badge" id="modalSppgBadge"></span>
+        <button class="modal-close" onclick="closePhotoModal()">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- INFORMASI LENGKAP -->
+      <div class="modal-section-title">📋 Informasi SPPG</div>
+      <div class="detail-grid" id="modalDetailGrid"></div>
+
+      <!-- TOMBOL MAPS -->
+      <div id="modalMapsBtn" style="margin:16px 0 0"></div>
+
+      <!-- FOTO DOKUMENTASI -->
+      <div class="modal-section-title" style="margin-top:24px">📸 Dokumentasi Foto</div>
+      <div class="photo-grid">
+        <div class="photo-slot">
+          <div class="photo-slot-label">🏠 Tampak Depan</div>
+          <div class="photo-slot-area" id="photo-area-tampak-depan">
+            <div class="photo-placeholder"><div class="photo-placeholder-icon">📷</div>Belum ada foto</div>
+          </div>
+          <div class="photo-slot-actions" id="photo-actions-tampak-depan"></div>
+        </div>
+        <div class="photo-slot">
+          <div class="photo-slot-label">🛋️ Tampak Dalam</div>
+          <div class="photo-slot-area" id="photo-area-tampak-dalam">
+            <div class="photo-placeholder"><div class="photo-placeholder-icon">📷</div>Belum ada foto</div>
+          </div>
+          <div class="photo-slot-actions" id="photo-actions-tampak-dalam"></div>
+        </div>
+        <div class="photo-slot">
+          <div class="photo-slot-label">🍳 Tampak Dapur</div>
+          <div class="photo-slot-area" id="photo-area-tampak-dapur">
+            <div class="photo-placeholder"><div class="photo-placeholder-icon">📷</div>Belum ada foto</div>
+          </div>
+          <div class="photo-slot-actions" id="photo-actions-tampak-dapur"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
+<script>
+// =====================================================
+// KONFIGURASI — GANTI BAGIAN INI DENGAN DATA ANDA
+// =====================================================
+const CONFIG = {
+  // Nama Kecamatan
+  kecamatan: "Kecamatan Ciwidey",
+
+  // URL Google Sheets CSV (lihat panduan di bawah)
+  // Format: https://docs.google.com/spreadsheets/d/SHEET_ID/gviz/tq?tqx=out:csv&sheet=NAMA_SHEET
+  sheetsUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSuk0BfAuG51vuzu6lBT__nh17EtJ56G4QhD2Zqg8f4TnKlJ-8nTZ3WQ2E4XmhS2eVWsitPyszzgZS/pub?gid=0&single=true&output=csv",
+
+  // Pusat peta (koordinat kecamatan Anda)
+  mapCenter: [-7.098846506959827, 107.43369812735345],
+  mapZoom: 13,
+
+  // Jika sheetsUrl kosong, gunakan data contoh ini
+  useSampleData: false
+};
+
+// =====================================================
+// DATA CONTOH — Hapus/ganti jika sudah ada Sheets
+// =====================================================
+const SAMPLE_DATA = [
+  { id:1, nama:"SPPG Ciwidey 1", ketua:"Budi Santoso", desa:"Ciwidey", status:"Operasional", lat:-7.095, lng:107.429, mitra:"Yayasan Cahaya Bangsa", alamat:"Jl. Raya Ciwidey No. 12, Ciwidey", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:2, nama:"SPPG Ciwidey 2", ketua:"Siti Rahayu", desa:"Ciwidey", status:"Operasional", lat:-7.098, lng:107.431, mitra:"Yayasan Mekar Mandiri", alamat:"Jl. Cagak No. 5, Ciwidey", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:3, nama:"SPPG Lebakmuncang 1", ketua:"Ahmad Fauzi", desa:"Lebakmuncang", status:"Operasional", lat:-7.102, lng:107.441, mitra:"Yayasan Tunas Harapan", alamat:"Kp. Lebakmuncang RT 01/02", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:4, nama:"SPPG Panyocokan 1", ketua:"Dewi Lestari", desa:"Panyocokan", status:"Non Operasional", lat:-7.085, lng:107.418, mitra:"", alamat:"Kp. Panyocokan Kulon", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:5, nama:"SPPG Sukawening 1", ketua:"Hendra Wijaya", desa:"Sukawening", status:"Operasional", lat:-7.110, lng:107.435, mitra:"Yayasan Sukawening Sejahtera", alamat:"Jl. Sukawening Raya No. 8", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:6, nama:"SPPG Panundaan 1", ketua:"Rina Permata", desa:"Panundaan", status:"Operasional", lat:-7.088, lng:107.450, mitra:"Yayasan Mitra Desa", alamat:"Kp. Panundaan Hilir", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:7, nama:"SPPG Rawabogo 1", ketua:"Dani Kurnia", desa:"Rawabogo", status:"Pending", lat:-7.075, lng:107.438, mitra:"", alamat:"Kp. Rawabogo RT 03/04", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+];
+
+// =====================================================
+// APP STATE
+// =====================================================
+let allData = [];
+let filteredData = [];
+let markers = {};
+let activeId = null;
+let map;
+
+// =====================================================
+// INIT MAP
+// =====================================================
+function initMap() {
+  map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+  }).addTo(map);
+}
+
+// =====================================================
+// MARKER ICON
+// =====================================================
+function getIcon(status, isActive) {
+  const color = status === 'Operasional' ? '#10b981' : status === 'Non Operasional' ? '#f43f5e' : '#f59e0b';
+  const border = isActive ? '#059669' : 'white';
+  const size = isActive ? 14 : 12;
+  return L.divIcon({
+    html: `<div style="width:${size*2}px;height:${size*2}px;border-radius:50%;background:${color};border:3px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+    className: '',
+    iconSize: [size*2, size*2],
+    iconAnchor: [size, size]
+  });
+}
+
+// =====================================================
+// RENDER MARKERS
+// =====================================================
+function buildPopupHtml(item) {
+  const statusKey = item.status === 'Operasional' ? 'op' : item.status === 'Non Operasional' ? 'non' : 'pending';
+  const statusIcon = statusKey === 'op' ? '🟢' : statusKey === 'non' ? '🔴' : '🟡';
+  return `
+    <div class="map-popup-card">
+      <div class="map-popup-head head-${statusKey}">
+        <div class="map-popup-badge">${statusIcon} ${item.status}</div>
+        <div class="map-popup-title">${item.nama}</div>
+      </div>
+      <div class="map-popup-body">
+        <div class="map-popup-row">
+          <div class="icon">📍</div>
+          <div class="info">
+            <div class="l">Desa</div>
+            <div class="v">${item.desa || '—'}</div>
+          </div>
+        </div>
+        <div class="map-popup-row">
+          <div class="icon">👤</div>
+          <div class="info">
+            <div class="l">Ketua</div>
+            <div class="v">${item.ketua || '—'}</div>
+          </div>
+        </div>
+        ${item.mitra ? `
+        <div class="map-popup-row">
+          <div class="icon">🏢</div>
+          <div class="info">
+            <div class="l">Mitra / Yayasan</div>
+            <div class="v">${item.mitra}</div>
+          </div>
+        </div>` : ''}
+      </div>
+      <div class="map-popup-footer">
+        <button class="map-popup-btn" onclick="openPhotoModal(${item.id})">📋 Lihat Detail Lengkap</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderMarkers(data) {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  data.forEach(item => {
+    if (!item.lat || !item.lng) return;
+    const m = L.marker([item.lat, item.lng], { icon: getIcon(item.status, false) })
+      .addTo(map)
+      .bindPopup(buildPopupHtml(item), { minWidth: 252, maxWidth: 280 });
+    m.on('click', () => selectItem(item.id));
+    markers[item.id] = m;
+  });
+}
+
+// =====================================================
+// RENDER LIST
+// =====================================================
+function renderList(data) {
+  const list = document.getElementById('sppgList');
+  if (data.length === 0) {
+    list.innerHTML = '<div class="empty">Tidak ada data ditemukan</div>';
+    return;
+  }
+  list.innerHTML = data.map(item => `
+    <div class="sppg-card ${activeId===item.id?'active':''}" onclick="selectItem(${item.id})">
+      <div class="card-top">
+        <div class="card-name">${item.nama}</div>
+        <span class="status-badge ${item.status==='Operasional'?'badge-op':item.status==='Non Operasional'?'badge-non':'badge-pending'}">${item.status.toUpperCase()}</span>
+      </div>
+      <div class="card-meta">
+        <span>📍 ${item.desa}</span>
+        <span>👤 ${item.ketua}</span>
+      </div>
+      ${item.mitra ? `<div class="card-mitra">🏢 ${item.mitra}</div>` : ''}
+      <button class="foto-btn" onclick="event.stopPropagation(); openPhotoModal(${item.id})">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        Lihat Detail Profil
+      </button>
+    </div>
+  `).join('');
+}
+
+// =====================================================
+// DAFTAR LENGKAP 7 DESA KECAMATAN CIWIDEY
+// =====================================================
+const DESA_LIST = [
+  'Ciwidey',
+  'Lebakmuncang',
+  'Panyocokan',
+  'Sukawening',
+  'Panundaan',
+  'Rawabogo',
+  'Nengkelan',
+];
+
+// =====================================================
+// UPDATE STATS
+// =====================================================
+function updateStats(data) {
+  document.getElementById('statTotal').textContent = allData.length;
+  document.getElementById('statOp').textContent = allData.filter(d=>d.status==='Operasional').length;
+  document.getElementById('statNon').textContent = allData.filter(d=>d.status==='Non Operasional').length;
+  document.getElementById('statDesa').textContent = DESA_LIST.length;
+  document.getElementById('headerSub').textContent = CONFIG.kecamatan + ' • Database Real-time';
+}
+
+// =====================================================
+// POPULATE FILTER DESA
+// =====================================================
+function populateDesaFilter() {
+  const select = document.getElementById('filterDesa');
+  // Gunakan DESA_LIST sebagai sumber utama (canonical).
+  // Tambahkan desa dari data yang belum ada di DESA_LIST (case-insensitive).
+  const desaListLower = DESA_LIST.map(d => d.toLowerCase());
+  const extraDesas = [...new Set(allData.map(d => d.desa))]
+    .filter(d => !desaListLower.includes(d.toLowerCase()));
+  const allDesas = [...DESA_LIST, ...extraDesas].sort((a, b) => a.localeCompare(b));
+  allDesas.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    select.appendChild(opt);
+  });
+}
+
+// =====================================================
+// FILTER + SEARCH
+// =====================================================
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const desa = document.getElementById('filterDesa').value.toLowerCase();
+  const status = document.getElementById('filterStatus').value;
+  filteredData = allData.filter(item => {
+    const matchQ = !q || item.nama.toLowerCase().includes(q) || item.ketua.toLowerCase().includes(q) || item.desa.toLowerCase().includes(q);
+    const matchDesa = !desa || item.desa.toLowerCase() === desa;
+    const matchStatus = !status || item.status === status;
+    return matchQ && matchDesa && matchStatus;
+  });
+  renderList(filteredData);
+  renderMarkers(filteredData);
+}
+
+// =====================================================
+// SELECT ITEM
+// =====================================================
+function selectItem(id) {
+  activeId = id;
+  const item = allData.find(d=>d.id===id);
+  if (!item) return;
+  renderList(filteredData);
+  Object.entries(markers).forEach(([mid, m]) => {
+    const d = allData.find(x=>x.id==mid);
+    m.setIcon(getIcon(d.status, mid==id));
+  });
+  if (item.lat && item.lng) {
+    map.setView([item.lat, item.lng], 15);
+    markers[id]?.openPopup();
+  }
+  // Scroll card into view
+  setTimeout(() => {
+    document.querySelector('.sppg-card.active')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 100);
+}
+
+// =====================================================
+// LOAD DARI GOOGLE SHEETS
+// Format kolom yang diperlukan di Sheets:
+// A=id | B=nama_sppg | C=nama_ketua | D=desa | E=status
+// F=latitude | G=longitude | H=nama_mitra | I=alamat
+// J=foto_tampak_depan | K=foto_tampak_dalam | L=foto_tampak_dapur
+// (Foto diisi dengan direct link Google Drive)
+// =====================================================
+
+// Konversi link Google Drive share ke direct image URL
+function toDirectUrl(url) {
+  if (!url) return '';
+  // https://drive.google.com/file/d/FILE_ID/view -> https://drive.google.com/uc?export=view&id=FILE_ID
+  const m = url.match(/\/file\/d\/([^/]+)/);
+  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  // Sudah dalam format uc?export=view
+  if (url.includes('drive.google.com/uc')) return url;
+  return url;
+}
+
+async function loadFromSheets() {
+  if (!CONFIG.sheetsUrl || CONFIG.useSampleData) {
+    allData = SAMPLE_DATA;
+    return;
+  }
+  try {
+    const res = await fetch(CONFIG.sheetsUrl);
+    const text = await res.text();
+    const rows = text.trim().split('\n').slice(1); // skip header
+    allData = rows.map((row, i) => {
+      // Handle quoted fields that may contain commas
+      const cols = [];
+      let cur = '', inQ = false;
+      for (let ch of row) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      cols.push(cur.trim());
+      return {
+        id: i+1,
+        nama:      cols[1] || '',
+        ketua:     cols[2] || '',
+        desa:      cols[3] || '',
+        status:    cols[4] || 'Pending',
+        lat:       parseFloat(cols[5]) || null,
+        lng:       parseFloat(cols[6]) || null,
+        mitra:     cols[7] || '',
+        alamat:    cols[8] || '',
+        fotoDepan: toDirectUrl(cols[9] || ''),
+        fotoDalam: toDirectUrl(cols[10] || ''),
+        fotoDapur: toDirectUrl(cols[11] || ''),
+      };
+    }).filter(d => d.nama);
+    document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
+  } catch(e) {
+    console.warn('Gagal memuat Sheets, gunakan data contoh:', e);
+    allData = SAMPLE_DATA;
+  }
+}
+
+// =====================================================
+// MAIN
+// =====================================================
+async function main() {
+  initMap();
+  await loadFromSheets();
+  populateDesaFilter();
+  filteredData = [...allData];
+  updateStats();
+  renderList(filteredData);
+  renderMarkers(filteredData);
+  document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+  document.getElementById('filterDesa').addEventListener('change', applyFilters);
+  document.getElementById('filterStatus').addEventListener('change', applyFilters);
+  // Auto refresh tiap 5 menit
+  setInterval(async () => {
+    await loadFromSheets();
+    applyFilters();
+    updateStats();
+  }, 300000);
+}
+
+main();
+
+// =====================================================
+// DETAIL PROFIL SPPG
+// =====================================================
+const PHOTO_TYPES = [
+  { key: 'tampak-depan', label: 'Tampak Depan', field: 'fotoDepan' },
+  { key: 'tampak-dalam', label: 'Tampak Dalam', field: 'fotoDalam' },
+  { key: 'tampak-dapur', label: 'Tampak Dapur', field: 'fotoDapur' },
+];
+
+function openPhotoModal(sppgId) {
+  const item = allData.find(d => d.id === sppgId);
+  if (!item) return;
+
+  // Header
+  document.getElementById('modalSppgName').textContent = item.nama;
+  document.getElementById('modalSppgMeta').innerHTML =
+    `📍 ${item.desa}${item.mitra ? ` &nbsp;·&nbsp; 🏢 ${item.mitra}` : ''}`;
+  const badge = document.getElementById('modalSppgBadge');
+  badge.textContent = item.status;
+  badge.className = `status-badge ${item.status==='Operasional'?'badge-op':item.status==='Non Operasional'?'badge-non':'badge-pending'}`;
+
+  // Informasi lengkap
+  const fields = [
+    { icon: '📋', label: 'Nama SPPG',          value: item.nama,    full: true },
+    { icon: '👤', label: 'Nama Ketua',          value: item.ketua },
+    { icon: '📍', label: 'Desa / Kelurahan',    value: item.desa },
+    { icon: '🏢', label: 'Nama Mitra/Yayasan',  value: item.mitra || '—' },
+    { icon: '📡', label: 'Status',              value: item.status },
+    { icon: '🏠', label: 'Alamat Lengkap',      value: item.alamat || '—', full: true },
+    { icon: '🗺️', label: 'Koordinat',           value: (item.lat && item.lng) ? `${item.lat}, ${item.lng}` : '—', full: true },
+  ];
+  document.getElementById('modalDetailGrid').innerHTML = fields.map(f => `
+    <div class="detail-item${f.full ? ' full-width' : ''}">
+      <div class="detail-label">${f.icon} ${f.label}</div>
+      <div class="detail-value">${f.value}</div>
+    </div>
+  `).join('');
+
+  // Foto dari data spreadsheet
+  PHOTO_TYPES.forEach(pt => {
+    const area    = document.getElementById(`photo-area-${pt.key}`);
+    const actions = document.getElementById(`photo-actions-${pt.key}`);
+    const url     = item[pt.field];
+    if (url) {
+      area.innerHTML = `<img src="${url}" alt="${pt.label}"
+        onclick="viewPhotoUrl('${url}','${pt.label}')" loading="lazy"
+        onerror="this.parentElement.innerHTML='<div class=\'photo-placeholder\'><div class=\'photo-placeholder-icon\'>❌</div>Gagal memuat</div>'">`;
+      actions.innerHTML = `
+        <button class="btn-view" onclick="viewPhotoUrl('${url}','${pt.label}')">🔍 Lihat</button>`;
+    } else {
+      area.innerHTML = `<div class="photo-placeholder"><div class="photo-placeholder-icon">📷</div>Belum ada foto</div>`;
+      actions.innerHTML = '';
+    }
+  });
+
+  // Tombol Google Maps
+  const mapsUrl = (item.lat && item.lng) ? `https://www.google.com/maps?q=${item.lat},${item.lng}` : null;
+  document.getElementById('modalMapsBtn').innerHTML = mapsUrl
+    ? `<a class="btn-maps" href="${mapsUrl}" target="_blank">🗺️ Buka di Google Maps</a>`
+    : '';
+
+  document.getElementById('photoModal').classList.add('open');
+}
+
+function closePhotoModal() {
+  document.getElementById('photoModal').classList.remove('open');
+}
+
+function viewPhotoUrl(url, label) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightboxCaption').textContent = label;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxImg').src = '';
+}
+
+document.getElementById('photoModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('photoModal')) closePhotoModal();
+});
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeLightbox(); closePhotoModal(); }
+});
+</script>
+
+<!-- ====================================================
+PANDUAN GOOGLE SHEETS
+
+1. Buat Google Spreadsheet dengan kolom:
+   A: id
+   B: nama_sppg
+   C: nama_ketua
+   D: desa
+   E: status  (Operasional / Non Operasional / Pending)
+   F: latitude
+   G: longitude
+   H: nama_mitra  (nama yayasan / mitra)
+   I: alamat_lengkap
+   J: foto_tampak_depan  (direct link Google Drive)
+   K: foto_tampak_dalam  (direct link Google Drive)
+   L: foto_tampak_dapur  (direct link Google Drive)
+
+2. Contoh isi baris:
+   1 | SPPG Ciwidey 1 | Budi Santoso | Ciwidey | Operasional | -7.095 | 107.429 | Yayasan Cahaya | Jl. Ciwidey No.1 | https://drive.google.com/file/d/XXX/view | | |
+
+3. Cara mendapatkan link foto dari Google Drive:
+   a. Upload foto ke Google Drive
+   b. Klik kanan > "Bagikan" > "Siapa saja yang memiliki link"
+   c. Salin link berbentuk: https://drive.google.com/file/d/FILE_ID/view
+   d. Tempel langsung ke kolom foto di spreadsheet
+   (Sistem akan otomatis mengkonversi ke format tampilan)
+
+4. Klik "File > Share > Publish to web"
+   Pilih sheet Anda, format CSV, klik Publish
+   Salin URL yang diberikan dan tempel ke CONFIG.sheetsUrl
+
+5. Edit CONFIG.kecamatan dan CONFIG.mapCenter sesuai lokasi
+
+6. Ganti CONFIG.useSampleData menjadi false
+==================================================== -->
+
+</body>
+</html>
