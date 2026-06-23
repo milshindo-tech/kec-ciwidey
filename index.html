@@ -11,6 +11,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  *, input, select, textarea, button {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
   :root {
     --primary: #10b981;
     --primary-hover: #059669;
@@ -1212,6 +1215,15 @@ function initMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
   }).addTo(map);
+
+  // Saat pertama dimuat, kontainer #map kadang belum punya ukuran final
+  // (karena CSS grid/flex baru selesai layout setelah paint pertama),
+  // sehingga Leaflet salah hitung area peta dan sebagian marker tidak
+  // langsung tampak. invalidateSize() memaksa Leaflet menghitung ulang.
+  requestAnimationFrame(() => map.invalidateSize());
+  setTimeout(() => map.invalidateSize(), 200);
+  setTimeout(() => map.invalidateSize(), 600);
+  window.addEventListener('resize', () => map.invalidateSize());
 }
 
 // =====================================================
@@ -1466,6 +1478,7 @@ async function main() {
   updateStats();
   renderList(filteredData);
   renderMarkers(filteredData);
+  map.invalidateSize();
   document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
   document.getElementById('searchInput').addEventListener('input', applyFilters);
   document.getElementById('filterDesa').addEventListener('change', applyFilters);
