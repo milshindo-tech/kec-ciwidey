@@ -1331,7 +1331,8 @@ function updateStats(data) {
   document.getElementById('statOp').textContent = allData.filter(d=>d.status==='Operasional').length;
   document.getElementById('statNon').textContent = allData.filter(d=>d.status==='Non Operasional').length;
   document.getElementById('statDesa').textContent = DESA_LIST.length;
-  document.getElementById('headerSub').textContent = CONFIG.kecamatan + ' • Database Real-time';
+  const headerSub = document.querySelector('header .sub');
+  if (headerSub) headerSub.textContent = CONFIG.kecamatan + ' • Database Real-time';
 }
 
 // =====================================================
