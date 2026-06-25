@@ -51,7 +51,7 @@
 
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg);
@@ -412,7 +412,7 @@
     z-index: 1;
     background: #f1f5f9;
   }
-  
+
   /* MAP OVERRIDES */
   .leaflet-popup-content-wrapper {
     border-radius: var(--radius-lg) !important;
@@ -596,7 +596,7 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  
+
   .photo-modal {
     background: var(--panel);
     border-radius: var(--radius-lg);
@@ -838,7 +838,7 @@
     from { transform: scale(0.95); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
-  
+
   .lightbox-close {
     position: absolute;
     top: 24px;
@@ -1187,19 +1187,33 @@ let map;
 // INIT MAP
 // =====================================================
 function initMap() {
-  map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-  }).addTo(map);
-
-  // Saat pertama dimuat, kontainer #map kadang belum punya ukuran final
-  // (karena CSS grid/flex baru selesai layout setelah paint pertama),
-  // sehingga Leaflet salah hitung area peta dan sebagian marker tidak
-  // langsung tampak. invalidateSize() memaksa Leaflet menghitung ulang.
-  requestAnimationFrame(() => map.invalidateSize());
-  setTimeout(() => map.invalidateSize(), 200);
-  setTimeout(() => map.invalidateSize(), 600);
-  window.addEventListener('resize', () => map.invalidateSize());
+  // Pastikan kontainer #map punya ukuran eksplisit SEBELUM Leaflet
+  // di-inisialisasi. Firefox (terutama dengan backdrop-filter dan
+  // grid/flex layout) kadang membuat kontainer punya ukuran 0×0 pada
+  // tick pertama, sehingga marker jatuh di luar viewport.
+  const mapEl = document.getElementById('map');
+  mapEl.style.minHeight = '400px';
+  mapEl.style.height = '100%';
+  // Tunggu layout benar-benar settle (2 RAF) — Firefox butuh ini,
+  // Chrome tidak masalah walau langsung.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    map = L.map('map', { zoomControl: true }).setView(CONFIG.mapCenter, CONFIG.mapZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    map.invalidateSize();
+    // invalidateSize() tambahan dengan delay — Firefox dengan CSS
+    // grid/flex + backdrop-filter kadang baru settle setelah beberapa ratus ms.
+    setTimeout(() => map && map.invalidateSize(), 200);
+    setTimeout(() => map && map.invalidateSize(), 600);
+    setTimeout(() => map && map.invalidateSize(), 1200);
+    window.addEventListener('resize', () => map && map.invalidateSize());
+    window.addEventListener('load', () => map && map.invalidateSize());
+    // Jika font web baru selesai load, layout container bisa berubah.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => map && map.invalidateSize());
+    }
+  }));
 }
 
 // =====================================================
@@ -1449,7 +1463,13 @@ async function main() {
   updateStats();
   renderList(filteredData);
   renderMarkers(filteredData);
-  map.invalidateSize();
+  // invalidateSize lagi setelah data & marker di-render — Firefox
+  // butuh ini agar marker benar-benar jatuh di dalam viewport.
+  if (map) {
+    map.invalidateSize();
+    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 500);
+  }
   document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
   document.getElementById('searchInput').addEventListener('input', applyFilters);
   document.getElementById('filterDesa').addEventListener('change', applyFilters);
@@ -1459,9 +1479,9 @@ async function main() {
     await loadFromSheets();
     applyFilters();
     updateStats();
+    if (map) map.invalidateSize();
   }, 300000);
 }
-
 main();
 
 // =====================================================
