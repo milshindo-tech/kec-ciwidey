@@ -1290,9 +1290,12 @@ const CONFIG = {
   // Nama Kecamatan
   kecamatan: "Kecamatan Ciwidey",
 
-  // URL Google Sheets CSV (lihat panduan di bawah)
-  // Format: https://docs.google.com/spreadsheets/d/SHEET_ID/gviz/tq?tqx=out:csv&sheet=NAMA_SHEET
+  // URL Google Sheets CSV — Sheet 1: Data SPPG
   sheetsUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSuk0BfAuG51vuzu6lBT__nh17EtJ56G4QhD2Zqg8f4TnKlJ-8nTZ3WQ2E4XmhS2eVWsitPyszzgZS/pub?gid=0&single=true&output=csv",
+
+  // URL Google Sheets CSV — Sheet 2: Data Penerima Manfaat
+  // Kolom: Nama SPPG | Nama Satuan | Kategori | Total Penerima
+  sheetsUrlPenerima: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnlSPDC3H0KEaz-KWWXgabz-zzNwqcSDTkmgTvIa-C-bVkkfXQCZK98ZeuqjwD_TFOdP1s6gXYZbUO/pub?gid=1477731461&single=true&output=csv",
 
   // Pusat peta (koordinat kecamatan Anda)
   mapCenter: [-7.098846506959827, 107.43369812735345],
@@ -1358,26 +1361,23 @@ function initMap() {
 }
 
 // =====================================================
-// HELPER: PARSE SUPLAI MAKANAN
-// Format input: "NAMA SEKOLAH = 44\nNAMA LAIN = 92"
+// DATA PENERIMA MANFAAT (dari Sheet 2)
 // =====================================================
-function parseSuplaiList(raw) {
-  if (!raw || !raw.trim()) return [];
-  return raw.split(/\n|;/)
-    .map(line => line.trim())
-    .filter(line => line)
-    .map(line => {
-      const parts = line.split('=');
-      const nama = parts[0].trim();
-      const jumlah = parseInt((parts[1] || '').trim()) || 0;
-      return { nama, jumlah };
-    })
-    .filter(e => e.nama);
+let penerimaData = []; // array of { namaSppg, namaSatuan, kategori, jumlah }
+
+// Ambil list penerima untuk satu SPPG
+function getPenerimaList(namaSppg) {
+  const key = namaSppg.trim().toLowerCase();
+  return penerimaData.filter(d => d.namaSppg.toLowerCase() === key);
 }
 
-function parseSuplaiTotal(raw) {
-  return parseSuplaiList(raw).reduce((sum, e) => sum + e.jumlah, 0);
+function getPenerimaTotal(namaSppg) {
+  return getPenerimaList(namaSppg).reduce((s, d) => s + d.jumlah, 0);
 }
+
+// Legacy compat — dipakai di beberapa tempat lama (popup, card)
+function parseSuplaiList(raw) { return []; }
+function parseSuplaiTotal(raw) { return 0; }
 
 // =====================================================
 // MARKER ICON
@@ -1438,7 +1438,7 @@ function getIcon(status, isActive) {
 function buildPopupHtml(item) {
   const statusKey = getStatusKey(item.status);
   const statusIcon = getStatusIcon(item.status);
-  const suplaiTotal = parseSuplaiTotal(item.suplai);
+  const suplaiTotal = getPenerimaTotal(item.nama);
   const suplaiHtml = suplaiTotal > 0
     ? `<div class="map-popup-row">
         <div class="icon">🍱</div>
@@ -1509,7 +1509,7 @@ function renderList(data) {
   }
   list.innerHTML = data.map(item => {
     const key = getStatusKey(item.status);
-    const totalSuplai = parseSuplaiTotal(item.suplai);
+    const totalSuplai = getPenerimaTotal(item.nama);
     const suplaiStr = totalSuplai > 0
       ? `<span class="card-supply">🍱 ${totalSuplai} porsi/hari</span>` : '';
     return `
@@ -1549,7 +1549,7 @@ function updateStats(data) {
   const berhentiCount = allData.filter(d => d.status === 'Berhenti' || d.status === 'Non Operasional').length;
   document.getElementById('statOp').textContent = aktifCount;
   document.getElementById('statNon').textContent = berhentiCount;
-  const totalPenerima = allData.reduce((sum, d) => sum + parseSuplaiTotal(d.suplai), 0);
+  const totalPenerima = allData.reduce((sum, d) => sum + getPenerimaTotal(d.nama), 0);
   document.getElementById('statDesa').textContent = totalPenerima.toLocaleString('id-ID');
   const headerSub = document.querySelector('header .sub');
   if (headerSub) headerSub.textContent = CONFIG.kecamatan + ' • Database Real-time';
@@ -1694,11 +1694,56 @@ async function loadFromSheets() {
 }
 
 // =====================================================
+// LOAD PENERIMA MANFAAT DARI SHEET 2
+// Kolom: A=Nama SPPG | B=Nama Satuan | C=Kategori | D=Total Penerima
+// =====================================================
+async function loadPenerimaData() {
+  if (!CONFIG.sheetsUrlPenerima) return;
+  try {
+    const res  = await fetch(CONFIG.sheetsUrlPenerima);
+    const text = await res.text();
+
+    function parseCSV(str) {
+      const rows = [];
+      let col = '', row = [], inQ = false;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i], next = str[i + 1];
+        if (inQ) {
+          if (ch === '"' && next === '"') { col += '"'; i++; }
+          else if (ch === '"')            { inQ = false; }
+          else                            { col += ch; }
+        } else {
+          if      (ch === '"')                   { inQ = true; }
+          else if (ch === ',')                   { row.push(col); col = ''; }
+          else if (ch === '\r' && next === '\n') { row.push(col); col = ''; rows.push(row); row = []; i++; }
+          else if (ch === '\n' || ch === '\r')   { row.push(col); col = ''; rows.push(row); row = []; }
+          else                                   { col += ch; }
+        }
+      }
+      if (col || row.length) { row.push(col); rows.push(row); }
+      return rows;
+    }
+
+    const rows = parseCSV(text.trim()).slice(1); // skip header
+    penerimaData = rows
+      .map(cols => ({
+        namaSppg:   (cols[0] || '').trim(),
+        namaSatuan: (cols[1] || '').trim(),
+        kategori:   (cols[2] || '').trim(),
+        jumlah:     parseInt((cols[3] || '0').trim()) || 0,
+      }))
+      .filter(d => d.namaSppg && d.namaSatuan);
+  } catch(e) {
+    console.warn('Gagal memuat data penerima:', e);
+  }
+}
+
+// =====================================================
 // MAIN
 // =====================================================
 async function main() {
   initMap();
-  await loadFromSheets();
+  await Promise.all([loadFromSheets(), loadPenerimaData()]);
   populateDesaFilter();
   filteredData = [...allData];
   updateStats();
@@ -1717,7 +1762,7 @@ async function main() {
   document.getElementById('filterStatus').addEventListener('change', applyFilters);
   // Auto refresh tiap 5 menit
   setInterval(async () => {
-    await loadFromSheets();
+    await Promise.all([loadFromSheets(), loadPenerimaData()]);
     applyFilters();
     updateStats();
     if (map) map.invalidateSize();
@@ -1763,17 +1808,18 @@ function openPhotoModal(sppgId) {
     </div>
   `).join('');
 
-  // Suplai Makanan — tabel scrollable
-  const suplaiList = parseSuplaiList(item.suplai);
+  // Penerima Manfaat — tabel scrollable dari Sheet 2
+  const penerimaList = getPenerimaList(item.nama);
   const suplaiSection = document.getElementById('modalSuplaiSection');
-  if (suplaiList.length === 0) {
-    suplaiSection.innerHTML = `<div class="suplai-empty">📭 Belum ada data suplai makanan</div>`;
+  if (penerimaList.length === 0) {
+    suplaiSection.innerHTML = `<div class="suplai-empty">📭 Belum ada data penerima manfaat</div>`;
   } else {
-    const total = suplaiList.reduce((s, e) => s + e.jumlah, 0);
-    const rows = suplaiList.map((e, i) => `
+    const total = penerimaList.reduce((s, e) => s + e.jumlah, 0);
+    const rows = penerimaList.map((e, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${e.nama}</td>
+        <td>${e.namaSatuan}</td>
+        <td>${e.kategori}</td>
         <td>${e.jumlah}</td>
       </tr>`).join('');
     suplaiSection.innerHTML = `
@@ -1781,16 +1827,17 @@ function openPhotoModal(sppgId) {
         <table class="suplai-table">
           <thead>
             <tr>
-              <th style="width:36px">No</th>
-              <th>Nama Sekolah / Lembaga</th>
-              <th>Porsi/Hari</th>
+              <th style="width:32px">No</th>
+              <th>Nama Satuan</th>
+              <th>Kategori</th>
+              <th>Penerima</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
           <tfoot>
             <tr>
-              <td colspan="2">Total Suplai</td>
-              <td>${total} porsi/hari</td>
+              <td colspan="3">Total Penerima</td>
+              <td>${total.toLocaleString('id-ID')} orang</td>
             </tr>
           </tfoot>
         </table>
