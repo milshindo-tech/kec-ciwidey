@@ -21,17 +21,35 @@
     --primary-dark: #064e3b;
     --primary-glow: rgba(16, 185, 129, 0.15);
 
+    /* Status: Proses Persiapan — abu/slate */
+    --status-persiapan: #64748b;
+    --status-persiapan-light: #f1f5f9;
+    --status-persiapan-dark: #334155;
+
+    /* Status: Pengajuan — biru */
+    --status-pengajuan: #3b82f6;
+    --status-pengajuan-light: #eff6ff;
+    --status-pengajuan-dark: #1d4ed8;
+
+    /* Status: Aktif — hijau (alias op) */
     --status-op: #10b981;
     --status-op-light: #ecfdf5;
     --status-op-dark: #047857;
 
+    /* Status: Berhenti — merah */
     --status-non: #f43f5e;
     --status-non-light: #fff1f2;
     --status-non-dark: #be123c;
 
-    --status-pending: #f59e0b;
-    --status-pending-light: #fef3c7;
-    --status-pending-dark: #b45309;
+    /* Status: Operasional — hijau tua/toska */
+    --status-operasional: #0891b2;
+    --status-operasional-light: #ecfeff;
+    --status-operasional-dark: #155e75;
+
+    /* Legacy pending alias → pengajuan */
+    --status-pending: #3b82f6;
+    --status-pending-light: #eff6ff;
+    --status-pending-dark: #1d4ed8;
 
     --bg: #f8fafc;
     --panel: #ffffff;
@@ -374,20 +392,35 @@
     border: 1px solid transparent;
     flex-shrink: 0;
   }
-  .badge-op {
+  .badge-persiapan {
+    background: var(--status-persiapan-light);
+    color: var(--status-persiapan-dark);
+    border-color: rgba(100, 116, 139, 0.2);
+  }
+  .badge-pengajuan {
+    background: var(--status-pengajuan-light);
+    color: var(--status-pengajuan-dark);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+  .badge-op, .badge-aktif {
     background: var(--status-op-light);
     color: var(--status-op-dark);
     border-color: rgba(16, 185, 129, 0.2);
   }
-  .badge-non {
+  .badge-non, .badge-berhenti {
     background: var(--status-non-light);
     color: var(--status-non-dark);
     border-color: rgba(244, 63, 94, 0.2);
   }
+  .badge-operasional {
+    background: var(--status-operasional-light);
+    color: var(--status-operasional-dark);
+    border-color: rgba(8, 145, 178, 0.2);
+  }
   .badge-pending {
-    background: var(--status-pending-light);
-    color: var(--status-pending-dark);
-    border-color: rgba(245, 158, 11, 0.2);
+    background: var(--status-pengajuan-light);
+    color: var(--status-pengajuan-dark);
+    border-color: rgba(59, 130, 246, 0.2);
   }
 
   .card-meta {
@@ -450,8 +483,13 @@
     position: relative;
   }
   .map-popup-head.head-op { background: linear-gradient(135deg, var(--status-op) 0%, var(--status-op-dark) 100%); }
+  .map-popup-head.head-aktif { background: linear-gradient(135deg, var(--status-op) 0%, var(--status-op-dark) 100%); }
   .map-popup-head.head-non { background: linear-gradient(135deg, var(--status-non) 0%, var(--status-non-dark) 100%); }
-  .map-popup-head.head-pending { background: linear-gradient(135deg, var(--status-pending) 0%, var(--status-pending-dark) 100%); }
+  .map-popup-head.head-berhenti { background: linear-gradient(135deg, var(--status-non) 0%, var(--status-non-dark) 100%); }
+  .map-popup-head.head-pending { background: linear-gradient(135deg, var(--status-pengajuan) 0%, var(--status-pengajuan-dark) 100%); }
+  .map-popup-head.head-pengajuan { background: linear-gradient(135deg, var(--status-pengajuan) 0%, var(--status-pengajuan-dark) 100%); }
+  .map-popup-head.head-persiapan { background: linear-gradient(135deg, var(--status-persiapan) 0%, var(--status-persiapan-dark) 100%); }
+  .map-popup-head.head-operasional { background: linear-gradient(135deg, var(--status-operasional) 0%, var(--status-operasional-dark) 100%); }
   .map-popup-badge {
     display: inline-flex;
     align-items: center;
@@ -809,6 +847,19 @@
     background: #ffe4e6;
   }
 
+  .card-supply {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    background: var(--primary-light);
+    border: 1px solid rgba(16,185,129,0.18);
+    border-radius: 6px;
+    padding: 3px 9px;
+  }
+
   /* LIGHTBOX */
   .lightbox-overlay {
     display: none;
@@ -973,8 +1024,92 @@
   /* Section title spacer */
   .modal-section-title + .detail-grid { margin-top: 0; }
 
-  /* Tombol Google Maps di modal */
-  .btn-maps {
+  /* SUPLAI MAKANAN TABLE */
+  .suplai-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .suplai-table-wrap::-webkit-scrollbar {
+    width: 5px;
+  }
+  .suplai-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--border-hover);
+    border-radius: 10px;
+  }
+  .suplai-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .suplai-table thead {
+    background: var(--primary-light);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .suplai-table thead th {
+    padding: 9px 14px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--primary-dark);
+    text-align: left;
+    border-bottom: 1px solid rgba(16,185,129,0.15);
+  }
+  .suplai-table thead th:last-child {
+    text-align: right;
+  }
+  .suplai-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .suplai-table tbody tr:last-child {
+    border-bottom: none;
+  }
+  .suplai-table tbody tr:hover {
+    background: #f8fafc;
+  }
+  .suplai-table td {
+    padding: 9px 14px;
+    color: var(--text);
+    font-weight: 500;
+    vertical-align: middle;
+  }
+  .suplai-table td:last-child {
+    text-align: right;
+    font-weight: 700;
+    color: var(--primary-dark);
+  }
+  .suplai-table tfoot {
+    background: #f1f5f9;
+    border-top: 2px solid var(--border);
+  }
+  .suplai-table tfoot td {
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .suplai-table tfoot td:last-child {
+    color: var(--primary-dark);
+    text-align: right;
+  }
+  .suplai-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 24px 16px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  /* TOMBOL GOOGLE MAPS */
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -1022,14 +1157,14 @@
   <div class="stat-card highlight-op">
     <div class="icon-box">🟢</div>
     <div>
-      <div class="label">Operasional</div>
+      <div class="label">Aktif / Operasional</div>
       <div class="value" id="statOp">—</div>
     </div>
   </div>
   <div class="stat-card highlight-non">
     <div class="icon-box">🔴</div>
     <div>
-      <div class="label">Non Operasional</div>
+      <div class="label">Berhenti</div>
       <div class="value" id="statNon">—</div>
     </div>
   </div>
@@ -1060,9 +1195,11 @@
           <div class="filter-label">STATUS OPERASIONAL</div>
           <select id="filterStatus">
             <option value="">Semua Status</option>
+            <option value="Proses Persiapan">Proses Persiapan</option>
+            <option value="Pengajuan">Pengajuan</option>
+            <option value="Aktif">Aktif</option>
+            <option value="Berhenti">Berhenti</option>
             <option value="Operasional">Operasional</option>
-            <option value="Non Operasional">Non Operasional</option>
-            <option value="Pending">Pending</option>
           </select>
         </div>
       </div>
@@ -1103,6 +1240,10 @@
 
       <!-- TOMBOL MAPS -->
       <div id="modalMapsBtn" style="margin:16px 0 0"></div>
+
+      <!-- SUPLAI MAKANAN -->
+      <div class="modal-section-title" style="margin-top:24px">🍱 Suplai Makanan</div>
+      <div id="modalSuplaiSection"></div>
 
       <!-- FOTO DOKUMENTASI -->
       <div class="modal-section-title" style="margin-top:24px">📸 Dokumentasi Foto</div>
@@ -1165,13 +1306,13 @@ const CONFIG = {
 // DATA CONTOH — Hapus/ganti jika sudah ada Sheets
 // =====================================================
 const SAMPLE_DATA = [
-  { id:1, nama:"SPPG Ciwidey 1", ketua:"Budi Santoso", desa:"Ciwidey", status:"Operasional", lat:-7.095, lng:107.429, mitra:"Yayasan Cahaya Bangsa", alamat:"Jl. Raya Ciwidey No. 12, Ciwidey", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:2, nama:"SPPG Ciwidey 2", ketua:"Siti Rahayu", desa:"Ciwidey", status:"Operasional", lat:-7.098, lng:107.431, mitra:"Yayasan Mekar Mandiri", alamat:"Jl. Cagak No. 5, Ciwidey", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:3, nama:"SPPG Lebakmuncang 1", ketua:"Ahmad Fauzi", desa:"Lebakmuncang", status:"Operasional", lat:-7.102, lng:107.441, mitra:"Yayasan Tunas Harapan", alamat:"Kp. Lebakmuncang RT 01/02", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:4, nama:"SPPG Panyocokan 1", ketua:"Dewi Lestari", desa:"Panyocokan", status:"Non Operasional", lat:-7.085, lng:107.418, mitra:"", alamat:"Kp. Panyocokan Kulon", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:5, nama:"SPPG Sukawening 1", ketua:"Hendra Wijaya", desa:"Sukawening", status:"Operasional", lat:-7.110, lng:107.435, mitra:"Yayasan Sukawening Sejahtera", alamat:"Jl. Sukawening Raya No. 8", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:6, nama:"SPPG Panundaan 1", ketua:"Rina Permata", desa:"Panundaan", status:"Operasional", lat:-7.088, lng:107.450, mitra:"Yayasan Mitra Desa", alamat:"Kp. Panundaan Hilir", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
-  { id:7, nama:"SPPG Rawabogo 1", ketua:"Dani Kurnia", desa:"Rawabogo", status:"Pending", lat:-7.075, lng:107.438, mitra:"", alamat:"Kp. Rawabogo RT 03/04", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:1, nama:"SPPG Ciwidey 1", ketua:"Budi Santoso", desa:"Ciwidey", status:"Operasional", lat:-7.095, lng:107.429, mitra:"Yayasan Cahaya Bangsa", alamat:"Jl. Raya Ciwidey No. 12, Ciwidey", suplai:"BAMBIM AL-MUBAROK = 44\nKB MUTIARA ILMI = 42\nKOBER ASSALAM = 92\nMIS MA SUKASIRNA = 93\nSDN CIWIDEY 1 = 200\nSDN CIWIDEY 2 = 185", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:2, nama:"SPPG Ciwidey 2", ketua:"Siti Rahayu", desa:"Ciwidey", status:"Aktif", lat:-7.098, lng:107.431, mitra:"Yayasan Mekar Mandiri", alamat:"Jl. Cagak No. 5, Ciwidey", suplai:"SDN CIWIDEY 3 = 160\nMI NURUL HUDA = 75\nTK ISLAM TERPADU = 38", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:3, nama:"SPPG Lebakmuncang 1", ketua:"Ahmad Fauzi", desa:"Lebakmuncang", status:"Aktif", lat:-7.102, lng:107.441, mitra:"Yayasan Tunas Harapan", alamat:"Kp. Lebakmuncang RT 01/02", suplai:"SDN LEBAKMUNCANG = 150\nPAUD HARAPAN BANGSA = 30", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:4, nama:"SPPG Panyocokan 1", ketua:"Dewi Lestari", desa:"Panyocokan", status:"Berhenti", lat:-7.085, lng:107.418, mitra:"", alamat:"Kp. Panyocokan Kulon", suplai:"", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:5, nama:"SPPG Sukawening 1", ketua:"Hendra Wijaya", desa:"Sukawening", status:"Operasional", lat:-7.110, lng:107.435, mitra:"Yayasan Sukawening Sejahtera", alamat:"Jl. Sukawening Raya No. 8", suplai:"SDN SUKAWENING 1 = 210\nSDN SUKAWENING 2 = 185\nMIS MIFTAHUL ULUM = 96\nRAUDHATUL ATHFAL = 59", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:6, nama:"SPPG Panundaan 1", ketua:"Rina Permata", desa:"Panundaan", status:"Pengajuan", lat:-7.088, lng:107.450, mitra:"Yayasan Mitra Desa", alamat:"Kp. Panundaan Hilir", suplai:"", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
+  { id:7, nama:"SPPG Rawabogo 1", ketua:"Dani Kurnia", desa:"Rawabogo", status:"Proses Persiapan", lat:-7.075, lng:107.438, mitra:"", alamat:"Kp. Rawabogo RT 03/04", suplai:"", fotoDepan:'', fotoDalam:'', fotoDapur:'' },
 ];
 
 // =====================================================
@@ -1217,10 +1358,70 @@ function initMap() {
 }
 
 // =====================================================
+// HELPER: PARSE SUPLAI MAKANAN
+// Format input: "NAMA SEKOLAH = 44\nNAMA LAIN = 92"
+// =====================================================
+function parseSuplaiList(raw) {
+  if (!raw || !raw.trim()) return [];
+  return raw.split(/\n|;/)
+    .map(line => line.trim())
+    .filter(line => line)
+    .map(line => {
+      const parts = line.split('=');
+      const nama = parts[0].trim();
+      const jumlah = parseInt((parts[1] || '').trim()) || 0;
+      return { nama, jumlah };
+    })
+    .filter(e => e.nama);
+}
+
+function parseSuplaiTotal(raw) {
+  return parseSuplaiList(raw).reduce((sum, e) => sum + e.jumlah, 0);
+}
+
+// =====================================================
 // MARKER ICON
 // =====================================================
+function getStatusColor(status) {
+  switch(status) {
+    case 'Proses Persiapan': return '#64748b';
+    case 'Pengajuan':        return '#3b82f6';
+    case 'Aktif':            return '#10b981';
+    case 'Berhenti':         return '#f43f5e';
+    case 'Operasional':      return '#0891b2';
+    // legacy fallback
+    case 'Non Operasional':  return '#f43f5e';
+    default:                 return '#64748b';
+  }
+}
+
+function getStatusKey(status) {
+  switch(status) {
+    case 'Proses Persiapan': return 'persiapan';
+    case 'Pengajuan':        return 'pengajuan';
+    case 'Aktif':            return 'aktif';
+    case 'Berhenti':         return 'berhenti';
+    case 'Operasional':      return 'operasional';
+    // legacy fallback
+    case 'Non Operasional':  return 'non';
+    default:                 return 'persiapan';
+  }
+}
+
+function getStatusIcon(status) {
+  switch(status) {
+    case 'Proses Persiapan': return '⚙️';
+    case 'Pengajuan':        return '📋';
+    case 'Aktif':            return '🟢';
+    case 'Berhenti':         return '🔴';
+    case 'Operasional':      return '🔵';
+    case 'Non Operasional':  return '🔴';
+    default:                 return '⚪';
+  }
+}
+
 function getIcon(status, isActive) {
-  const color = status === 'Operasional' ? '#10b981' : status === 'Non Operasional' ? '#f43f5e' : '#f59e0b';
+  const color = getStatusColor(status);
   const border = isActive ? '#059669' : 'white';
   const size = isActive ? 14 : 12;
   return L.divIcon({
@@ -1235,8 +1436,17 @@ function getIcon(status, isActive) {
 // RENDER MARKERS
 // =====================================================
 function buildPopupHtml(item) {
-  const statusKey = item.status === 'Operasional' ? 'op' : item.status === 'Non Operasional' ? 'non' : 'pending';
-  const statusIcon = statusKey === 'op' ? '🟢' : statusKey === 'non' ? '🔴' : '🟡';
+  const statusKey = getStatusKey(item.status);
+  const statusIcon = getStatusIcon(item.status);
+  const suplaiTotal = parseSuplaiTotal(item.suplai);
+  const suplaiHtml = suplaiTotal > 0
+    ? `<div class="map-popup-row">
+        <div class="icon">🍱</div>
+        <div class="info">
+          <div class="l">Suplai Makanan</div>
+          <div class="v">${suplaiTotal} porsi/hari</div>
+        </div>
+      </div>` : '';
   return `
     <div class="map-popup-card">
       <div class="map-popup-head head-${statusKey}">
@@ -1258,6 +1468,7 @@ function buildPopupHtml(item) {
             <div class="v">${item.ketua || '—'}</div>
           </div>
         </div>
+        ${suplaiHtml}
         ${item.mitra ? `
         <div class="map-popup-row">
           <div class="icon">🏢</div>
@@ -1296,18 +1507,24 @@ function renderList(data) {
     list.innerHTML = '<div class="empty">Tidak ada data ditemukan</div>';
     return;
   }
-  list.innerHTML = data.map(item => `
+  list.innerHTML = data.map(item => {
+    const key = getStatusKey(item.status);
+    const totalSuplai = parseSuplaiTotal(item.suplai);
+    const suplaiStr = totalSuplai > 0
+      ? `<span class="card-supply">🍱 ${totalSuplai} porsi/hari</span>` : '';
+    return `
     <div class="sppg-card ${activeId===item.id?'active':''}" onclick="selectItem(${item.id})">
       <div class="card-top">
         <div class="card-name">${item.nama}</div>
-        <span class="status-badge ${item.status==='Operasional'?'badge-op':item.status==='Non Operasional'?'badge-non':'badge-pending'}">${item.status.toUpperCase()}</span>
+        <span class="status-badge badge-${key}">${item.status.toUpperCase()}</span>
       </div>
       <div class="card-meta">
         <span>📍 ${item.desa}</span>
         <span>👤 ${item.ketua}</span>
+        ${suplaiStr}
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 // =====================================================
@@ -1328,8 +1545,10 @@ const DESA_LIST = [
 // =====================================================
 function updateStats(data) {
   document.getElementById('statTotal').textContent = allData.length;
-  document.getElementById('statOp').textContent = allData.filter(d=>d.status==='Operasional').length;
-  document.getElementById('statNon').textContent = allData.filter(d=>d.status==='Non Operasional').length;
+  const aktifCount = allData.filter(d => d.status === 'Aktif' || d.status === 'Operasional').length;
+  const berhentiCount = allData.filter(d => d.status === 'Berhenti' || d.status === 'Non Operasional').length;
+  document.getElementById('statOp').textContent = aktifCount;
+  document.getElementById('statNon').textContent = berhentiCount;
   document.getElementById('statDesa').textContent = DESA_LIST.length;
   const headerSub = document.querySelector('header .sub');
   if (headerSub) headerSub.textContent = CONFIG.kecamatan + ' • Database Real-time';
@@ -1398,6 +1617,8 @@ function selectItem(id) {
 // A=id | B=nama_sppg | C=nama_ketua | D=desa | E=status
 // F=latitude | G=longitude | H=nama_mitra | I=alamat
 // J=foto_tampak_depan | K=foto_tampak_dalam | L=foto_tampak_dapur
+// M=suplai_makanan (angka porsi per hari)
+// Status: Proses Persiapan / Pengajuan / Aktif / Berhenti / Operasional
 // (Foto diisi dengan direct link Google Drive)
 // =====================================================
 
@@ -1436,7 +1657,7 @@ async function loadFromSheets() {
         nama:      cols[1] || '',
         ketua:     cols[2] || '',
         desa:      cols[3] || '',
-        status:    cols[4] || 'Pending',
+        status:    cols[4] || 'Proses Persiapan',
         lat:       parseFloat(cols[5]) || null,
         lng:       parseFloat(cols[6]) || null,
         mitra:     cols[7] || '',
@@ -1444,6 +1665,7 @@ async function loadFromSheets() {
         fotoDepan: toDirectUrl(cols[9] || ''),
         fotoDalam: toDirectUrl(cols[10] || ''),
         fotoDapur: toDirectUrl(cols[11] || ''),
+        suplai:    cols[12] || '',
       };
     }).filter(d => d.nama);
     document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
@@ -1504,7 +1726,7 @@ function openPhotoModal(sppgId) {
     `📍 ${item.desa}${item.mitra ? ` &nbsp;·&nbsp; 🏢 ${item.mitra}` : ''}`;
   const badge = document.getElementById('modalSppgBadge');
   badge.textContent = item.status;
-  badge.className = `status-badge ${item.status==='Operasional'?'badge-op':item.status==='Non Operasional'?'badge-non':'badge-pending'}`;
+  badge.className = `status-badge badge-${getStatusKey(item.status)}`;
 
   // Informasi lengkap
   const fields = [
@@ -1522,6 +1744,40 @@ function openPhotoModal(sppgId) {
       <div class="detail-value">${f.value}</div>
     </div>
   `).join('');
+
+  // Suplai Makanan — tabel scrollable
+  const suplaiList = parseSuplaiList(item.suplai);
+  const suplaiSection = document.getElementById('modalSuplaiSection');
+  if (suplaiList.length === 0) {
+    suplaiSection.innerHTML = `<div class="suplai-empty">📭 Belum ada data suplai makanan</div>`;
+  } else {
+    const total = suplaiList.reduce((s, e) => s + e.jumlah, 0);
+    const rows = suplaiList.map((e, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${e.nama}</td>
+        <td>${e.jumlah}</td>
+      </tr>`).join('');
+    suplaiSection.innerHTML = `
+      <div class="suplai-table-wrap">
+        <table class="suplai-table">
+          <thead>
+            <tr>
+              <th style="width:36px">No</th>
+              <th>Nama Sekolah / Lembaga</th>
+              <th>Porsi/Hari</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2">Total Suplai</td>
+              <td>${total} porsi/hari</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>`;
+  }
 
   // Foto dari data spreadsheet
   PHOTO_TYPES.forEach(pt => {
