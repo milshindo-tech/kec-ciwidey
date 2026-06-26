@@ -1169,9 +1169,9 @@
     </div>
   </div>
   <div class="stat-card highlight-desa">
-    <div class="icon-box">📍</div>
+    <div class="icon-box">🍱</div>
     <div>
-      <div class="label">Total Desa</div>
+      <div class="label">Penerima Manfaat</div>
       <div class="value" id="statDesa">—</div>
     </div>
   </div>
@@ -1549,7 +1549,8 @@ function updateStats(data) {
   const berhentiCount = allData.filter(d => d.status === 'Berhenti' || d.status === 'Non Operasional').length;
   document.getElementById('statOp').textContent = aktifCount;
   document.getElementById('statNon').textContent = berhentiCount;
-  document.getElementById('statDesa').textContent = DESA_LIST.length;
+  const totalPenerima = allData.reduce((sum, d) => sum + parseSuplaiTotal(d.suplai), 0);
+  document.getElementById('statDesa').textContent = totalPenerima.toLocaleString('id-ID');
   const headerSub = document.querySelector('header .sub');
   if (headerSub) headerSub.textContent = CONFIG.kecamatan + ' • Database Real-time';
 }
