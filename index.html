@@ -1641,33 +1641,50 @@ async function loadFromSheets() {
   try {
     const res = await fetch(CONFIG.sheetsUrl);
     const text = await res.text();
-    const rows = text.trim().split('\n').slice(1); // skip header
-    allData = rows.map((row, i) => {
-      // Handle quoted fields that may contain commas
-      const cols = [];
-      let cur = '', inQ = false;
-      for (let ch of row) {
-        if (ch === '"') { inQ = !inQ; }
-        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-        else { cur += ch; }
+
+    // ── Parser CSV RFC-4180 yang benar ──────────────────────────────────
+    // Mendukung: field dengan koma, newline (\n atau \r\n) di dalam cell,
+    // dan tanda kutip ganda escaped ("") di dalam quoted field.
+    function parseCSV(str) {
+      const rows = [];
+      let col = '', row = [], inQ = false;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        const next = str[i + 1];
+        if (inQ) {
+          if (ch === '"' && next === '"') { col += '"'; i++; }          // escaped ""
+          else if (ch === '"')            { inQ = false; }              // end of quoted field
+          else                            { col += ch; }                // char inside quotes (incl. \n)
+        } else {
+          if      (ch === '"')                         { inQ = true; }  // start quoted field
+          else if (ch === ',')                         { row.push(col); col = ''; }  // delimiter
+          else if (ch === '\r' && next === '\n')       { row.push(col); col = ''; rows.push(row); row = []; i++; }
+          else if (ch === '\n' || ch === '\r')         { row.push(col); col = ''; rows.push(row); row = []; }
+          else                                         { col += ch; }
+        }
       }
-      cols.push(cur.trim());
-      return {
-        id: i+1,
-        nama:      cols[1] || '',
-        ketua:     cols[2] || '',
-        desa:      cols[3] || '',
-        status:    cols[4] || 'Proses Persiapan',
-        lat:       parseFloat(cols[5]) || null,
-        lng:       parseFloat(cols[6]) || null,
-        mitra:     cols[7] || '',
-        alamat:    cols[8] || '',
-        fotoDepan: toDirectUrl(cols[9] || ''),
-        fotoDalam: toDirectUrl(cols[10] || ''),
-        fotoDapur: toDirectUrl(cols[11] || ''),
-        suplai:    cols[12] || '',
-      };
-    }).filter(d => d.nama);
+      if (col || row.length) { row.push(col); rows.push(row); }
+      return rows;
+    }
+    // ────────────────────────────────────────────────────────────────────
+
+    const rows = parseCSV(text.trim()).slice(1); // skip header row
+    allData = rows.map((cols, i) => ({
+      id:        i + 1,
+      nama:      (cols[1]  || '').trim(),
+      ketua:     (cols[2]  || '').trim(),
+      desa:      (cols[3]  || '').trim(),
+      status:    (cols[4]  || 'Proses Persiapan').trim(),
+      lat:       parseFloat(cols[5]) || null,
+      lng:       parseFloat(cols[6]) || null,
+      mitra:     (cols[7]  || '').trim(),
+      alamat:    (cols[8]  || '').trim(),
+      fotoDepan: toDirectUrl((cols[9]  || '').trim()),
+      fotoDalam: toDirectUrl((cols[10] || '').trim()),
+      fotoDapur: toDirectUrl((cols[11] || '').trim()),
+      suplai:    (cols[12] || '').trim(),   // teks multi-baris, newline sudah dipreserve
+    })).filter(d => d.nama);
+
     document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
   } catch(e) {
     console.warn('Gagal memuat Sheets, gunakan data contoh:', e);
